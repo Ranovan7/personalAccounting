@@ -43,17 +43,15 @@ def reports_get(request):
     '''GET method for reports'''
     max_obj = int(request.GET.get('max', '25'))
     query = request.GET.get('q', '')
+    username = request.GET.get('u', 'anonymous')
     page = int(request.GET.get('page', '1'))
     page -= 1
     start = 0 + (max_obj*page)
     end = max_obj + (max_obj*page)
-    if request.user.is_authenticated:
-        picked_reports = Reports.objects.filter(owner=request.user, category__name__contains=query).order_by('-transactionDate', '-id')[start:end]
-        obj_count = Reports.objects.filter(owner=request.user, category__name__contains=query).count()
-    else:
-        anonymous = User.objects.get(username='anonymous')
-        picked_reports = Reports.objects.filter(owner=anonymous, category__name__contains=query).order_by('-transactionDate', '-id')[start:end]
-        obj_count = Reports.objects.filter(owner=anonymous, category__name__contains=query).count()
+
+    # get query
+    picked_reports = Reports.objects.filter(owner__username=username, category__name__contains=query).order_by('-transactionDate', '-id')[start:end]
+    obj_count = Reports.objects.filter(owner__username=username, category__name__contains=query).count()
 
     page_count = obj_count // max_obj
 
@@ -89,18 +87,18 @@ def reports_create(request):
         category = new_category
 
     # make new report
-    if request.user.is_authenticated:
-        owner = request.user
-    else:
-        owner = User.objects.get(username='anonymous')
-        # abort report addition if anonymous reports already exceeding 1500 objects
-        if Reports.objects.filter(owner=owner).count() > 1500:
-            result = {
-                'data': [],
-                'status': 0,
-                'info': 'Already Exceeding Maximum amount for Anonymous'
-            }
-            return JsonResponse(result, json_dumps_params={'indent': 2})
+    # get user first
+    username = request.POST.get('u', 'anonymous')
+    owner = User.objects.get(username=username)
+
+    # abort report addition if anonymous reports already exceeding 1500 objects
+    if username == "anonymous" and Reports.objects.filter(owner=owner).count() > 1500:
+        result = {
+            'data': [],
+            'status': 0,
+            'info': 'Already Exceeding Maximum amount for Anonymous'
+        }
+        return JsonResponse(result, json_dumps_params={'indent': 2})
 
     amount = int(request.POST.get('amount'))
     isExpense = True if request.POST.get('isExpense') == 'true' else False
@@ -202,7 +200,10 @@ def reports_update(request):
     picked_report.save()
 
     print(f"Updating Report {picked_report.id}")
-    messages.info(request, "This Report have been updated !")
+
+    # updating wallet
+    change = (-1)**picked_report.isExpense * picked_report.amount
+    wallet_update(owner=picked_report.owner, change=change)
 
     result = {
         'data': picked_report.serialize,
@@ -254,14 +255,15 @@ def reports_delete(request):
 
 def statistic(request):
     '''GET method for statistic data'''
+    # get default month-year
     today = timezone.now().date()
     month = request.GET.get('month', today.month)
     year = request.GET.get('year', today.year)
     print(f"year : {year}, month : {month}")
-    if request.user.is_authenticated:
-        picked_reports = Reports.objects.filter(transactionDate__month=month, transactionDate__year=year, owner=request.user)
-    else:
-        picked_reports = Reports.objects.filter(transactionDate__month=month, transactionDate__year=year, owner__username="anonymous")
+
+    # get users data
+    username = request.GET.get('u', 'anonymous')
+    picked_reports = Reports.objects.filter(transactionDate__month=month, transactionDate__year=year, owner__username=username)
 
     summary = {}
     for report in picked_reports:

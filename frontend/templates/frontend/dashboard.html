@@ -251,7 +251,8 @@
     },
     methods: {
       search: function(pickedPage=this.pageNum){
-        let url = "http://localhost:8000/api/report?q=" + this.query + "&page=" + pickedPage + "&max=" + this.maxObj
+        let username = "{{ username }}"
+        let url = "http://localhost:8000/api/report?q=" + this.query + "&page=" + pickedPage + "&max=" + this.maxObj + "&u=" + username
         this.pageNum = pickedPage
         console.log(pickedPage)
         fetch(url)
@@ -273,6 +274,7 @@
       addReport: function(){
         let url = "http://localhost:8000/api/report_create"
         let token = new FormData()
+        token.append('u', "{{ username }}")
         token.append('amount', this.new_report.amount)
         token.append('category', this.new_report.category)
         token.append('isExpense', this.new_report.isExpense)
@@ -301,8 +303,10 @@
     },
     created () {
       this.search()
+      let username = "{{ username }}"
+      let url = "http://localhost:8000/api/wallet?u=" + username
 
-      fetch("http://localhost:8000/api/wallet")
+      fetch(url)
         .then(resp => resp.json())
         .then(data => {this.walletInfo = data.data})
         .catch(error => console.log(`Error when fetching data : ${error}`))

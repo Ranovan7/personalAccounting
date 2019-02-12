@@ -6,17 +6,27 @@ from django.contrib import messages
 
 def dashboard(request):
     '''Dashboard'''
-    return render(request, 'frontend/dashboard.html')
+    context = {
+        'username': request.user.username if request.user.is_authenticated else "anonymous"
+    }
+    return render(request, 'frontend/dashboard.html', context)
 
 
 def report_edit(request, report_id):
     '''Dashboard'''
-    return render(request, 'frontend/report_edit.html', context={'report_id': report_id})
+    context = {
+        'report_id': report_id,
+        'username': request.user.username if request.user.is_authenticated else "anonymous"
+    }
+    return render(request, 'frontend/report_edit.html', context)
 
 
 def statistics(request):
     '''Statistics page'''
-    return render(request, 'frontend/statistics.html')
+    context = {
+        'username': request.user.username if request.user.is_authenticated else "anonymous"
+    }
+    return render(request, 'frontend/statistics.html', context)
 
 
 def logout_request(request):
