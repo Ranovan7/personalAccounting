@@ -37,10 +37,10 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'corsheaders',
     'frontend.apps.FrontendConfig',
     'moneyCirculation.apps.MoneycirculationConfig',
     'users.apps.UsersConfig',
-    'corsheaders',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -127,7 +127,7 @@ USE_TZ = True
 # CORS Config
 CORS_ORIGIN_ALLOW_ALL = False
 
-CORS_URLS_REGEX = r'^/api/.*$'
+# CORS_URLS_REGEX = r'^/api/.*$'
 
 CORS_ORIGIN_WHITELIST = (
     'http//:localhost:8000',
