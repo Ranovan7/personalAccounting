@@ -1,0 +1,201 @@
+{% extends "frontend/base.html" %}
+{% load static %}
+{% block content %}
+
+<div id="editReport" class="container" align="center">
+  <br>
+  <h5>Update Report</h5>
+  <br>
+  <div class="row" align="center">
+    <form class="col s12">
+      <div class="row">
+        <div class="input-field col s6 offset-s3">
+          <div class="switch" id="isExpense">
+            <label>
+              <span v-if="report.isExpense">Income</span>
+              <span v-else style="color: red">Income</span>
+
+              <input type="checkbox" v-model="report.isExpense">
+
+              <span v-if="report.isExpense" style="color: red">Expense</span>
+              <span v-else>Expense</span>
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="input-field col s6 offset-s3">
+          <div class="form-group">
+            <label for="category">Category</label>
+            <input v-model="report.category" type="text" class="form-control" id="category" placeholder="Category">
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="input-field col s6 offset-s3">
+          <div class="form-group">
+            <label for="amount">Amount (Rp)</label>
+            <input v-model="report.amount" type="number" class="form-control" id="amount" placeholder="Amount">
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="input-field col s6 offset-s3">
+          <div class="form-group">
+            <label for="date">Date</label>
+            <datepicker v-model="report.date" name="dateInput" input-class="form-control" :format="reportDateFormat"></datepicker>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="input-field col s6 offset-s3">
+          <a class="btn btn-info" href="#" @click="updateReport()">Update</a>
+          <a class="btn btn-danger" href="#" @click=deleteReport()>Delete</a>
+        </div>
+      </div>
+      <br>
+      <div class="row">
+        <div class="input-field col s6 offset-s3">
+          <a class="btn btn-secondary" href="{% url 'dashboard' %}">Cancel</a>
+        </div>
+      </div>
+    </form>
+  </div>
+
+</div>
+
+<script>
+  "use strict"
+
+  // Get the csrftoken
+  function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+          let cookies = document.cookie.split(';');
+          for (let i = 0; i < cookies.length; i++) {
+              let cookie = jQuery.trim(cookies[i]);
+              // Does this cookie string begin with the name we want?
+              if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                  cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                  break;
+              }
+          }
+      }
+      return cookieValue;
+  }
+  let csrftoken = getCookie('csrftoken')
+
+  // App for report page
+  let app = new Vue({
+    delimiters: ['[[', ']]'],
+    el: '#editReport',
+    components: {
+      datepicker: vuejsDatepicker
+    },
+    data: {
+      report_id: "{{report_id}}",
+      report: {
+        id: " ",
+        category: " ",
+        amount: 0,
+        isExpense: " ",
+        date: new Date(),
+        owner: " "
+      },
+      status: {},
+      monthNames: [
+        "January", "February", "March",
+        "April", "May", "June", "July",
+        "August", "September", "October",
+        "November", "December"
+      ]
+    },
+    computed: {
+      finalDate() {
+        let new_date
+        if (this.report.date) {
+          new_date = new Date(this.report.date)
+        } else {
+          new_date = new Date()
+        }
+
+        let day = new_date.getDate()
+        let monthIndex = Number(new_date.getMonth()) + 1
+        let year = new_date.getFullYear()
+
+        return day + ' ' + monthIndex + ' ' + year
+      },
+      reportDateFormat() {
+        let new_date
+        if (this.report.date) {
+          new_date = new Date(this.report.date)
+        } else {
+          new_date = new Date()
+        }
+
+        let day = new_date.getDate()
+        let monthIndex = new_date.getMonth()
+        let year = new_date.getFullYear()
+
+        return day + ' ' + this.monthNames[monthIndex] + ' ' + year
+      }
+    },
+    methods: {
+      checkDate: function(){
+        console.log(this.finalDate)
+      },
+      updateReport: function(){
+        let url = "http://localhost:8000/api/report_update"
+        let token = new FormData()
+        token.append('id', this.report.id)
+        token.append('amount', this.report.amount)
+        token.append('category', this.report.category)
+        token.append('isExpense', this.report.isExpense)
+        token.append('transactionDate', this.finalDate)
+        token.append('csrfmiddlewaretoken', csrftoken)
+        const params = {
+          method: 'POST',
+          body: token
+        }
+        fetch(url, params)
+          .then(resp => resp.json())
+          .then(data => { this.status = data.data })
+          .catch(error => console.log(`Error when fetching data : ${error}`))
+        console.log("Sending Update Request")
+        window.location.reload()
+      },
+      deleteReport: function(){
+        let url = "http://localhost:8000/api/report_delete"
+        let token = new FormData()
+        token.append('id', this.report.id)
+        token.append('csrfmiddlewaretoken', csrftoken)
+        const params = {
+          method: 'POST',
+          body: token
+        }
+        fetch(url, params)
+          .then(resp => resp.json())
+          .then(data => { this.status = data.data })
+          .catch(error => console.log(`Error when fetching data : ${error}`))
+        console.log("Sending Delete Request")
+        window.open("http://localhost:8000/dashboard")
+      }
+    },
+    filters: {
+      capitalize: function (str) {
+        return str.charAt(0).toUpperCase() + str.slice(1)
+      }
+    },
+    created () {
+      console.log("Starting App for Report page")
+      let url = "http://localhost:8000/api/report_update?id=" + this.report_id
+      fetch(url)
+        .then(resp => resp.json())
+        .then(data => { this.report = data.data })
+        .catch(error => console.log(`Error when fetching data : ${error}`))
+      console.log("Finished Starting App for Report page")
+    }
+  })
+</script>
+
+{% endblock content %}

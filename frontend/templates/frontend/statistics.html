@@ -1,0 +1,129 @@
+{% extends "frontend/base.html" %}
+{% load static %}
+{% block content %}
+<br>
+<div id="statistic" class="container" align="center">
+  <div class="container">
+    <div class="input-group mb-3">
+      <div class="input-group-prepend">
+        <span class="input-group-text">Season</span>
+      </div>
+      <datepicker v-model="season" name="dateInput" input-class="form-control" :format="statisticSeason" minimum-view="month"></datepicker>
+      <div class="input-group-append">
+        <button class="input-group-text btn btn-info" @click="updateChart()">Refresh</button>
+      </div>
+    </div>
+  </div>
+  <canvas id="myChart" width="500" height="400"></canvas>
+</div>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.10.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.1/Chart.min.js"></script>
+<script>
+  "use strict"
+
+  // App for report page
+  let app = new Vue({
+    delimiters: ['[[', ']]'],
+    el: '#statistic',
+    components: {
+      datepicker: vuejsDatepicker
+    },
+    data: {
+      season: null,
+      chart: null,
+      status: {},
+      monthNames: [
+        "January", "February", "March",
+        "April", "May", "June", "July",
+        "August", "September", "October",
+        "November", "December"
+      ]
+    },
+    computed: {
+      statisticSeason() {
+        let monthIndex = this.season.getMonth()
+        let year = this.season.getFullYear()
+
+        return this.monthNames[monthIndex] + ' ' + year
+      }
+    },
+    methods: {
+      renderChart: function(dataset, query){
+        console.log(query)
+        let labels = []
+        let data = []
+        let label
+        console.log("Data Pre-Processing start!")
+        for (label in dataset){
+          labels.push(label)
+          data.push(dataset[label])
+        }
+        console.log("Data Pre-Processing done!")
+        this.chart = new Chart(
+          document.getElementById("myChart"),
+          {
+            "type":"horizontalBar",
+            "data":{
+              "labels":labels,
+              "datasets":[{
+                "label":`Report for month ${query.month} year ${query.year}`,
+                "data":data,
+                "fill":false,
+                "backgroundColor": "rgba(255, 99, 132, 0.2)",
+                "borderColor": "rgb(255, 99, 132)",
+                "borderWidth":1
+              }]
+            },
+            "options":{
+              "scales":{
+                "xAxes":[{
+                  "ticks":{"beginAtZero":true}
+                }]
+              }
+            }
+          })
+      },
+      updateChart: function(){
+        let url = "http://localhost:8000/api/statistic?month=" + (Number(this.season.getMonth()) + 1) + "&year=" + this.season.getFullYear()
+        fetch(url)
+          .then(resp => resp.json())
+          .then(data => { this.refreshChart(data.data, data.query) })
+          .catch(error => console.log(`Error when fetching data : ${error}`))
+
+      },
+      refreshChart: function(dataset, query){
+        let labels = []
+        let data = []
+        let label
+        console.log("Refreshing Chart Data!")
+        for (label in dataset){
+          labels.push(label)
+          data.push(dataset[label])
+        }
+        this.chart.data.labels = labels
+        this.chart.data.datasets[0].data = data
+        this.chart.data.datasets.label = `Report for month ${query.month} year ${query.year}`
+        this.chart.update()
+      }
+    },
+    created () {
+      this.season = new Date()
+      console.log(this.season.getMonth())
+      let url = "http://localhost:8000/api/statistic?month=" + (Number(this.season.getMonth()) + 1) + "&year=" + Number(this.season.getFullYear())
+      fetch(url)
+        .then(resp => resp.json())
+        .then(data => { this.renderChart(data.data, data.query) })
+        .catch(error => console.log(`Error when fetching data : ${error}`))
+    }
+  })
+
+</script>
+
+<style>
+  .small {
+    max-width: 600px
+    margin:  150px auto
+  }
+</style>
+{% endblock content %}

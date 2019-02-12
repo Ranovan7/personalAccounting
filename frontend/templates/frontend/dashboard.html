@@ -1,0 +1,314 @@
+{% extends "frontend/base.html" %}
+{% load static %}
+{% block content %}
+<div id="app" class="bd-example">
+  <div class="container">
+    <br>
+    {% if user.is_authenticated %}
+      <h3 align='center'>Welcome {{ user.first_name }} {{ user.last_name }}</h3>
+    {% else %}
+      <h3 align='center'>Welcome Anonymous</h3>
+      <p align="center">Have an Account? <a href="{% url 'login' %}">Login Here</a></p>
+    {% endif %}
+    <br>
+    <div class="input-group mb-3">
+      <input type="text" class="form-control" v-model="query" v-on:keyup.Enter="search()" placeholder="Search">
+      <div class="input-group-append">
+        <span class="input-group-text">
+          <a class="btn btn-sm" @click="search()">Search</a>
+        </span>
+      </div>
+    </div>
+    <br>
+    <div align="center">
+      <button type="button" class="btn btn-light" data-toggle="modal" data-target="#checkWallet">
+        Check Wallet
+      </button>
+      <button type="button" class="btn btn-light" data-toggle="modal" data-target="#addReport">
+        Add Report
+      </button>
+    </div>
+    <br>
+    <table class="table table-hover table-bordered">
+      <thead class="thead-dark">
+        <tr>
+          <th align="center" v-for="label in labels">[[ label ]]</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="(report, count) in reports">
+          <th>[[ (count+1) + (maxObj*(pageNum-1)) ]]</th>
+          <td v-if="report.isExpense" style="color: red" align="right">-[[ report.amount ]]</td>
+          <td v-else style="color: green" align="right">[[ report.amount ]]</td>
+          <td>[[ report.category | capitalize ]]</td>
+          <td>[[ report.date ]]</td>
+          <td align="center">
+            <a class="btn btn-sm btn-light" v-bind:href="'report/'+report.id">Change</a>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <nav aria-label="Dashboard Pagination" v-if="pages > 1">
+    <ul class="pagination justify-content-center">
+      <div>
+        <li v-if="pageNum == 1" class="page-item disabled">
+          <a class="page-link">Previous</a>
+        </li>
+        <li v-else class="page-item">
+          <a class="page-link" @click="search(pageNum-1)">Previous</a>
+        </li>
+      </div>
+      <div v-for="page in pages">
+        <li v-if="page == pageNum" class="page-item active">
+          <a class="page-link">[[ page ]] <span class="sr-only">(current)</span></a>
+        </li>
+        <li v-else class="page-item"><a class="page-link" @click="search(page)">[[ page ]]</a></li>
+      </div>
+      <div>
+        <li v-if="pageNum == pages" class="page-item disabled">
+          <a class="page-link">Next</a>
+        </li>
+        <li v-else class="page-item">
+          <a class="page-link" @click="search(pageNum+1)">Next</a>
+        </li>
+      </div>
+    </ul>
+  </nav>
+
+  <!-- Add Report Modals Here -->
+  <div class="modal" id="addReport" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Add Report</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="row" align="center">
+            <form class="col s12">
+              <div class="row">
+                <div class="input-field col s6 offset-s3">
+                  <div class="switch" id="isExpense">
+                    <label>
+                      <span v-if="new_report.isExpense">Income</span>
+                      <span v-else style="color: red">Income</span>
+
+                      <input type="checkbox" v-model="new_report.isExpense">
+
+                      <span v-if="new_report.isExpense" style="color: red">Expense</span>
+                      <span v-else>Expense</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="input-field col s6 offset-s3">
+                  <div class="form-group">
+                    <label for="category">Category</label>
+                    <input v-model="new_report.category" type="text" class="form-control" id="category" placeholder="Category">
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="input-field col s6 offset-s3">
+                  <div class="form-group">
+                    <label for="amount">Amount (Rp)</label>
+                    <input v-model="new_report.amount" type="number" class="form-control" id="amount" placeholder="Amount">
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="input-field col s6 offset-s3">
+                  <div class="form-group">
+                    <label for="date">Date</label>
+                    <datepicker v-model="new_report.date" name="dateInput" input-class="form-control" :format="reportDateFormat"></datepicker>
+                  </div>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-success" @click="addReport()">Add</button>
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="checkWallet" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          {% if user.is_authenticated %}
+            <h4 align='center'>{{ user.first_name }} {{ user.last_name }} Wallet</h4>
+          {% else %}
+            <h4 align='center'>Anonymous Wallet</h4>
+          {% endif %}
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <h6 align="center">Total Amount</h6>
+          <h6 align="center" v-if="walletInfo">Rp [[ walletInfo.total ]]</h6>
+          <h6 align="center" v-else>Rp 0 [[ walletInfo ]]</h6>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  "use strict"
+
+  // Get the csrftoken
+  function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+          let cookies = document.cookie.split(';');
+          for (let i = 0; i < cookies.length; i++) {
+              let cookie = jQuery.trim(cookies[i]);
+              // Does this cookie string begin with the name we want?
+              if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                  cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                  break;
+              }
+          }
+      }
+      return cookieValue;
+  }
+  let csrftoken = getCookie('csrftoken')
+
+  // App for dashboard page
+  var mainApp = new Vue({
+    delimiters: ['[[', ']]'],
+    el: '#app',
+    components: {
+      datepicker: vuejsDatepicker
+    },
+    data: {
+      query: '',
+      pageNum: 1,
+      pages: 0,
+      maxObj: 25,
+      labels: ['No', 'Amount', 'Category', 'Date', 'Edit'],
+      reports: [],
+      walletInfo: {},
+      categoryList: [],
+      status: {},
+      new_report: {
+        amount: "",
+        isExpense: true,
+        category: "",
+        date: new Date()
+      },
+      monthNames: [
+        "January", "February", "March",
+        "April", "May", "June", "July",
+        "August", "September", "October",
+        "November", "December"
+      ]
+    },
+    computed: {
+      finalDate() {
+        let new_date
+        if (this.new_report.date) {
+          new_date = new Date(this.new_report.date)
+        } else {
+          new_date = new Date()
+        }
+
+        let day = new_date.getDate()
+        let monthIndex = Number(new_date.getMonth()) + 1
+        let year = new_date.getFullYear()
+
+        return day + ' ' + monthIndex + ' ' + year
+      },
+      reportDateFormat() {
+        let new_date
+        if (this.new_report.date) {
+          new_date = new Date(this.new_report.date)
+        } else {
+          new_date = new Date()
+        }
+
+        let day = new_date.getDate()
+        let monthIndex = new_date.getMonth()
+        let year = new_date.getFullYear()
+
+        return day + ' ' + this.monthNames[monthIndex] + ' ' + year
+      }
+    },
+    methods: {
+      search: function(pickedPage=this.pageNum){
+        let url = "http://localhost:8000/api/report?q=" + this.query + "&page=" + pickedPage + "&max=" + this.maxObj
+        this.pageNum = pickedPage
+        console.log(pickedPage)
+        fetch(url)
+          .then(resp => resp.json())
+          .then(data => { this.getAllData(data) })
+          .catch(error => console.log(`Error when fetching data : ${error}`))
+      },
+      getAllData: function(data){
+        this.reports = data.data
+        this.pages = Number(data.pages)
+      },
+      categoryNamesOnly: function(categories){
+        nameList = []
+        for (cat in categories){
+          nameList.push(categories[cat].name)
+        }
+        this.categoryList = nameList
+      },
+      addReport: function(){
+        let url = "http://localhost:8000/api/report_create"
+        let token = new FormData()
+        token.append('amount', this.new_report.amount)
+        token.append('category', this.new_report.category)
+        token.append('isExpense', this.new_report.isExpense)
+        token.append('transactionDate', this.finalDate)
+        token.append('csrfmiddlewaretoken', csrftoken)
+        const params = {
+          method: 'POST',
+          body: token
+        }
+        fetch(url, params)
+          .then(resp => resp.json())
+          .then(data => { this.refreshPage(data.data) })
+          .catch(error => console.log(`Error when fetching data : ${error}`))
+
+      },
+      refreshPage: function(data){
+        this.status = data
+        console.log("Sending Create Request")
+        window.location.reload()
+      }
+    },
+    filters: {
+      capitalize: function (str) {
+        return str.charAt(0).toUpperCase() + str.slice(1)
+      }
+    },
+    created () {
+      this.search()
+
+      fetch("http://localhost:8000/api/wallet")
+        .then(resp => resp.json())
+        .then(data => {this.walletInfo = data.data})
+        .catch(error => console.log(`Error when fetching data : ${error}`))
+
+    }
+  })
+</script>
+
+{% endblock content %}
