@@ -1,6 +1,8 @@
 # Requirement
 - Python 3.7
 - Django 2.1.5
+- babel
+- django-cors-headers
 - VueCDN
 
 # Features

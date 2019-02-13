@@ -31,7 +31,10 @@ SECRET_KEY = secretKey
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'rmyrnvn.pythonanywhere.com',
+    'localhost'
+]
 
 
 # Application definition
@@ -130,7 +133,7 @@ CORS_ORIGIN_ALLOW_ALL = False
 # CORS_URLS_REGEX = r'^/api/.*$'
 
 CORS_ORIGIN_WHITELIST = (
-    'http//:localhost:8000',
+    'rmyrnvn.pythonanywhere.com'
 )
 
 

@@ -170,6 +170,7 @@
 
 <script>
   "use strict"
+  let main_url = "http://localhost:8000" // https://rmyrnvn.pythonanywhere.com
 
   // Get the csrftoken
   function getCookie(name) {
@@ -252,7 +253,7 @@
     methods: {
       search: function(pickedPage=this.pageNum){
         let username = "{{ username }}"
-        let url = "http://localhost:8000/api/report?q=" + this.query + "&page=" + pickedPage + "&max=" + this.maxObj + "&u=" + username
+        let url = main_url + "/api/report?q=" + this.query + "&page=" + pickedPage + "&max=" + this.maxObj + "&u=" + username
         this.pageNum = pickedPage
         console.log(pickedPage)
         fetch(url)
@@ -272,7 +273,7 @@
         this.categoryList = nameList
       },
       addReport: function(){
-        let url = "http://localhost:8000/api/report_create"
+        let url = main_url + "/api/report_create"
         let token = new FormData()
         token.append('u', "{{ username }}")
         token.append('amount', this.new_report.amount)
@@ -304,7 +305,7 @@
     created () {
       this.search()
       let username = "{{ username }}"
-      let url = "http://localhost:8000/api/wallet?u=" + username
+      let url = main_url + "/api/wallet?u=" + username
 
       fetch(url)
         .then(resp => resp.json())

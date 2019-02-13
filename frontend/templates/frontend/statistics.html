@@ -21,6 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.1/Chart.min.js"></script>
 <script>
   "use strict"
+  let main_url = "http://localhost:8000" // https://rmyrnvn.pythonanywhere.com
 
   // App for report page
   let app = new Vue({
@@ -86,7 +87,7 @@
       },
       updateChart: function(){
         let username = "{{ username }}"
-        let url = "http://localhost:8000/api/statistic?month=" + (Number(this.season.getMonth()) + 1) + "&year=" + this.season.getFullYear() + "&u=" + username
+        let url = main_url + "/api/statistic?month=" + (Number(this.season.getMonth()) + 1) + "&year=" + this.season.getFullYear() + "&u=" + username
         fetch(url)
           .then(resp => resp.json())
           .then(data => { this.refreshChart(data.data, data.query) })
@@ -112,7 +113,7 @@
       this.season = new Date()
       console.log(this.season.getMonth())
       let username = "{{ username }}"
-      let url = "http://localhost:8000/api/statistic?month=" + (Number(this.season.getMonth()) + 1) + "&year=" + Number(this.season.getFullYear()) + "&u=" + username
+      let url = main_url + "/api/statistic?month=" + (Number(this.season.getMonth()) + 1) + "&year=" + Number(this.season.getFullYear()) + "&u=" + username
       fetch(url)
         .then(resp => resp.json())
         .then(data => { this.renderChart(data.data, data.query) })

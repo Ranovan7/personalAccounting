@@ -186,24 +186,20 @@ def reports_update(request):
     if 'transactionDate' in request.POST:
         picked_report.transactionDate = datetime.strptime(request.POST.get('transactionDate'), '%d %m %Y').date()
 
+    if 'isExpense' in request.POST:
+        picked_report.isExpense = True if request.POST.get('isExpense') == 'true' else False
+
     if 'amount' in request.POST:
-        old_amount = picked_report.amount
-        new_amount = int(request.POST.get('amount'))
-        picked_report.amount = new_amount
+        old_amount = (-1)**picked_report.isExpense * picked_report.amount
+        new_amount = (-1)**picked_report.isExpense * int(request.POST.get('amount'))
+        picked_report.amount = int(request.POST.get('amount'))
 
         # updating wallet
         wallet_update(owner=picked_report.owner, change=new_amount-old_amount)
 
-    if 'isExpense' in request.POST:
-        picked_report.isExpense = True if request.POST.get('isExpense') == 'true' else False
-
     picked_report.save()
 
     print(f"Updating Report {picked_report.id}")
-
-    # updating wallet
-    change = (-1)**picked_report.isExpense * picked_report.amount
-    wallet_update(owner=picked_report.owner, change=change)
 
     result = {
         'data': picked_report.serialize,

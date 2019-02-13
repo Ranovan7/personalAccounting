@@ -6,17 +6,20 @@ from django.contrib import messages
 
 def dashboard(request):
     '''Dashboard'''
+    username = request.user.username if request.user.is_authenticated else "anonymous"
     context = {
-        'username': request.user.username if request.user.is_authenticated else "anonymous"
+        'username': username,
+        'title': "Dashboard"
     }
     return render(request, 'frontend/dashboard.html', context)
 
 
 def report_edit(request, report_id):
-    '''Dashboard'''
+    '''Report page'''
     context = {
         'report_id': report_id,
-        'username': request.user.username if request.user.is_authenticated else "anonymous"
+        'username': request.user.username if request.user.is_authenticated else "anonymous",
+        'title': "Report Page"
     }
     return render(request, 'frontend/report_edit.html', context)
 
@@ -24,7 +27,8 @@ def report_edit(request, report_id):
 def statistics(request):
     '''Statistics page'''
     context = {
-        'username': request.user.username if request.user.is_authenticated else "anonymous"
+        'username': request.user.username if request.user.is_authenticated else "anonymous",
+        'title': "Statistics"
     }
     return render(request, 'frontend/statistics.html', context)
 
@@ -56,4 +60,8 @@ def login_request(request):
             messages.warning(request, "Invalid Form !")
 
     form = AuthenticationForm()
-    return render(request, "frontend/login.html", {'form': form})
+    context = {
+        'form': form,
+        'title': "Login"
+    }
+    return render(request, "frontend/login.html", context)

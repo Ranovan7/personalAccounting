@@ -9,17 +9,12 @@ class WalletInfo(View):
 
     def get(self, request, *args, **kwargs):
         '''Managing GET request from the server'''
-        if request.user.is_authenticated:
-            picked_wallet = Wallet.objects.get(owner=request.user).serialize
-            status = 1
-        else:
-            anonymous = User.objects.get(username='anonymous')
-            picked_wallet = Wallet.objects.get(owner=anonymous).serialize
-            status = 0
+        username = request.GET.get('u', 'anonymous')
+        picked_wallet = Wallet.objects.get(owner__username=username).serialize
 
         result = {
             'data': picked_wallet,
-            'status': status
+            'status': 1
         }
         return JsonResponse(result, json_dumps_params={'indent': 2})
 
